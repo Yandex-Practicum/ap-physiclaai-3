@@ -37,6 +37,8 @@ RUN pip3 install --no-cache-dir \
     jax \
     jaxlib
 
+RUN pip3 install --upgrade pip
+
 RUN pip3 install --no-cache-dir \
     lerobot \
     einops \

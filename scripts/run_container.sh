@@ -95,7 +95,12 @@ if $REBUILD; then
   echo "==> Останавливаю контейнер ${CONTAINER}..."
   docker rm -f "$CONTAINER" 2>/dev/null || true
   echo "==> Пересобираю образ..."
-  docker build -t "$IMAGE" -f "$ENV_DIR/$DOCKERFILE" "$PROJECT_DIR"
+  docker build \
+    --build-arg HTTP_PROXY= \
+    --build-arg HTTPS_PROXY= \
+    --build-arg http_proxy= \
+    --build-arg https_proxy= \
+    -t "$IMAGE" -f "$ENV_DIR/$DOCKERFILE" "$PROJECT_DIR"
 elif $RESTART; then
   echo "==> Перезапускаю контейнер..."
   docker rm -f "$CONTAINER" 2>/dev/null || true
@@ -103,7 +108,12 @@ fi
 
 if ! image_exists; then
   echo "==> Образ не найден, собираю ${IMAGE}..."
-  docker build -t "$IMAGE" -f "$ENV_DIR/$DOCKERFILE" "$PROJECT_DIR"
+  docker build \
+    --build-arg HTTP_PROXY= \
+    --build-arg HTTPS_PROXY= \
+    --build-arg http_proxy= \
+    --build-arg https_proxy= \
+    -t "$IMAGE" -f "$ENV_DIR/$DOCKERFILE" "$PROJECT_DIR"
 fi
 
 if container_running; then
