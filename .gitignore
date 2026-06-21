@@ -1,0 +1,36 @@
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.venv
+venv/
+.env
+
+# Данные и модели
+dataset/
+logs/
+*.pt
+!checkpoints/rl_expert.pt
+
+# Медиа
+*.mp4
+*.png
+*.jpg
+frame_check.png
+episode_frames.png
+check_frame.png
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

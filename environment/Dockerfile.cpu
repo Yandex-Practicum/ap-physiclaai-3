@@ -1,0 +1,58 @@
+# CPU-образ: Ubuntu + PyTorch CPU + MuJoCo + BC-зависимости (без NVIDIA).
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    xvfb \
+    x11vnc \
+    x11-xserver-utils \
+    fluxbox \
+    novnc \
+    python3-websockify \
+    python3 \
+    python3-pip \
+    libgl1-mesa-glx \
+    libgl1-mesa-dev \
+    libglu1-mesa \
+    libglu1-mesa-dev \
+    libosmesa6-dev \
+    libglew-dev \
+    libglfw3 \
+    libglfw3-dev \
+    libegl1-mesa-dev \
+    wget \
+    curl \
+    net-tools \
+    supervisor \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --no-cache-dir \
+    torch --index-url https://download.pytorch.org/whl/cpu
+
+RUN pip3 install --no-cache-dir \
+    mujoco \
+    numpy \
+    jax \
+    jaxlib
+
+RUN pip3 install --no-cache-dir \
+    lerobot \
+    einops \
+    timm \
+    matplotlib \
+    tensorboard \
+    imageio[ffmpeg] \
+    tqdm
+
+ENV DISPLAY=:99
+ENV MUJOCO_GL=glx
+
+COPY environment/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+WORKDIR /workspace
+
+EXPOSE 5900 6080 6006
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

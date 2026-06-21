@@ -1,0 +1,147 @@
+<mujoco model="panda_pick_cube">
+  <compiler angle="radian" meshdir="." autolimits="true"/>
+
+  <option timestep="0.002" integrator="implicitfast"/>
+
+  <default>
+    <default class="panda">
+      <joint armature="0.1" damping="10" frictionloss="0.1"/>
+      <position kp="200" kv="20"/>
+      <default class="finger">
+        <joint armature="0.01" damping="5" frictionloss="0.5"/>
+        <position kp="50" kv="5"/>
+      </default>
+    </default>
+    <default class="visual">
+      <geom contype="0" conaffinity="0" group="1" type="mesh"/>
+    </default>
+    <default class="collision">
+      <geom group="0" type="mesh"/>
+    </default>
+  </default>
+
+  <asset>
+    <texture type="2d" name="grid_tex" builtin="checker" rgb1=".9 .9 .9" rgb2=".7 .7 .7"
+             width="512" height="512"/>
+    <material name="grid_mat" texture="grid_tex" texrepeat="4 4"/>
+    <material name="robot_mat" rgba=".9 .9 .9 1"/>
+    <material name="cube_mat" rgba=".2 .8 .2 1"/>
+    <material name="target_mat" rgba=".8 .2 .2 .5"/>
+    <material name="gripper_mat" rgba=".6 .6 .6 1"/>
+  </asset>
+
+  <worldbody>
+    <light pos="0 0 2.5" dir="0 0 -1" diffuse=".8 .8 .8" specular=".3 .3 .3"/>
+    <light pos="0.5 -0.5 2" dir="-0.2 0.2 -1" diffuse=".5 .5 .5"/>
+
+    <!-- Table -->
+    <body name="table" pos="0.5 0 0.2">
+      <geom type="box" size="0.4 0.5 0.2" rgba=".6 .5 .4 1" mass="100"/>
+    </body>
+
+    <!-- Ground plane -->
+    <geom name="floor" pos="0 0 0" size="2 2 0.1" type="plane" material="grid_mat"/>
+
+    <!-- Panda Robot -->
+    <body name="panda_link0" pos="0 0 0.4" childclass="panda">
+      <geom type="cylinder" size="0.06 0.03" pos="0 0 -0.015" mass="2" material="robot_mat"/>
+      <body name="panda_link1" pos="0 0 0.333">
+        <joint name="joint1" type="hinge" axis="0 0 1" range="-2.8973 2.8973"/>
+        <geom type="capsule" fromto="0 0 0 0 0 -0.19" size="0.06" mass="2" material="robot_mat"/>
+        <body name="panda_link2" pos="0 0 0" quat="0.707 -0.707 0 0">
+          <joint name="joint2" type="hinge" axis="0 0 1" range="-1.7628 1.7628"/>
+          <geom type="capsule" fromto="0 0 0 0 0 -0.19" size="0.06" mass="2" material="robot_mat"/>
+          <body name="panda_link3" pos="0 0 -0.316" quat="0.707 0.707 0 0">
+            <joint name="joint3" type="hinge" axis="0 0 1" range="-2.8973 2.8973"/>
+            <geom type="capsule" fromto="0 0 0 0.088 0 0" size="0.05" mass="1.5" material="robot_mat"/>
+            <body name="panda_link4" pos="0.0825 0 0" quat="0.707 0.707 0 0">
+              <joint name="joint4" type="hinge" axis="0 0 1" range="-3.0718 -0.0698"/>
+              <geom type="capsule" fromto="0 0 0 -0.088 0 0" size="0.05" mass="1.5" material="robot_mat"/>
+              <body name="panda_link5" pos="-0.0825 0 -0.384" quat="0.707 -0.707 0 0">
+                <joint name="joint5" type="hinge" axis="0 0 1" range="-2.8973 2.8973"/>
+                <geom type="capsule" fromto="0 0 0 0 0 -0.1" size="0.05" mass="1" material="robot_mat"/>
+                <body name="panda_link6" pos="0 0 0" quat="0.707 0.707 0 0">
+                  <joint name="joint6" type="hinge" axis="0 0 1" range="-0.0175 3.7525"/>
+                  <geom type="capsule" fromto="0 0 0 0.088 0 0" size="0.04" mass="1" material="robot_mat"/>
+                  <body name="panda_link7" pos="0.088 0 0" quat="0.707 0.707 0 0">
+                    <joint name="joint7" type="hinge" axis="0 0 1" range="-2.8973 2.8973"/>
+                    <geom type="cylinder" size="0.04 0.02" mass="0.5" material="robot_mat"/>
+
+                    <!-- Flange + Gripper base -->
+                    <body name="panda_hand" pos="0 0 -0.107" quat="0.924 0 0 -0.383">
+                      <geom type="box" size="0.02 0.04 0.04" mass="0.5" material="gripper_mat"/>
+
+                      <!-- Gripper camera -->
+                      <camera name="gripper_cam" pos="0.05 0 0.04" xyaxes="0 -1 0 0.5 0 1"
+                              fovy="60" resolution="84 84"/>
+
+                      <!-- Left finger -->
+                      <body name="left_finger" pos="0 0 -0.058">
+                        <joint name="finger_joint1" type="slide" axis="0 1 0" range="0 0.04"
+                               class="finger"/>
+                        <geom type="box" size="0.01 0.01 0.03" pos="0 0.015 -0.02"
+                              mass="0.1" material="gripper_mat" friction="1 0.05 0.001"/>
+                      </body>
+
+                      <!-- Right finger -->
+                      <body name="right_finger" pos="0 0 -0.058">
+                        <joint name="finger_joint2" type="slide" axis="0 -1 0" range="0 0.04"
+                               class="finger"/>
+                        <geom type="box" size="0.01 0.01 0.03" pos="0 -0.015 -0.02"
+                              mass="0.1" material="gripper_mat" friction="1 0.05 0.001"/>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+
+    <!-- Cube (freejoint) -->
+    <body name="cube" pos="0.5 0 0.425">
+      <freejoint name="cube_joint"/>
+      <geom name="cube_geom" type="box" size="0.02 0.02 0.02" mass="0.05" material="cube_mat"
+            friction="1 0.05 0.001"/>
+    </body>
+
+    <!-- Target zone marker -->
+    <body name="target" pos="0.5 0.15 0.425">
+      <geom name="target_geom" type="cylinder" size="0.03 0.002" material="target_mat"
+            contype="0" conaffinity="0"/>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <position name="act_joint1" joint="joint1" class="panda" ctrlrange="-2.8973 2.8973"/>
+    <position name="act_joint2" joint="joint2" class="panda" ctrlrange="-1.7628 1.7628"/>
+    <position name="act_joint3" joint="joint3" class="panda" ctrlrange="-2.8973 2.8973"/>
+    <position name="act_joint4" joint="joint4" class="panda" ctrlrange="-3.0718 -0.0698"/>
+    <position name="act_joint5" joint="joint5" class="panda" ctrlrange="-2.8973 2.8973"/>
+    <position name="act_joint6" joint="joint6" class="panda" ctrlrange="-0.0175 3.7525"/>
+    <position name="act_joint7" joint="joint7" class="panda" ctrlrange="-2.8973 2.8973"/>
+    <position name="act_finger1" joint="finger_joint1" class="finger" ctrlrange="0 0.04"/>
+    <position name="act_finger2" joint="finger_joint2" class="finger" ctrlrange="0 0.04"/>
+  </actuator>
+
+  <sensor>
+    <jointpos name="joint1_pos" joint="joint1"/>
+    <jointpos name="joint2_pos" joint="joint2"/>
+    <jointpos name="joint3_pos" joint="joint3"/>
+    <jointpos name="joint4_pos" joint="joint4"/>
+    <jointpos name="joint5_pos" joint="joint5"/>
+    <jointpos name="joint6_pos" joint="joint6"/>
+    <jointpos name="joint7_pos" joint="joint7"/>
+    <jointpos name="finger1_pos" joint="finger_joint1"/>
+    <jointpos name="finger2_pos" joint="finger_joint2"/>
+    <jointvel name="joint1_vel" joint="joint1"/>
+    <jointvel name="joint2_vel" joint="joint2"/>
+    <jointvel name="joint3_vel" joint="joint3"/>
+    <jointvel name="joint4_vel" joint="joint4"/>
+    <jointvel name="joint5_vel" joint="joint5"/>
+    <jointvel name="joint6_vel" joint="joint6"/>
+    <jointvel name="joint7_vel" joint="joint7"/>
+  </sensor>
+</mujoco>

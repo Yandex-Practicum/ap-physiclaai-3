@@ -1,0 +1,10 @@
+torch
+mujoco>=3.1.0
+numpy
+matplotlib
+tensorboard
+einops
+timm
+lerobot
+imageio[ffmpeg]
+tqdm
