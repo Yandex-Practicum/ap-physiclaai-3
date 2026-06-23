@@ -87,6 +87,26 @@ python3 inference.py --checkpoint checkpoints/rl_expert.pt --model rl --episodes
 python3 scripts/download_artifacts.py --datasets train_1k train_10k eval --checkpoints bc_1k bc_10k
 ```
 
+### Обучение на Google Colab (CPU-поток)
+
+Если локальной GPU нет: соберите датасеты в Docker, а обучение BC выполните на бесплатной
+GPU в Colab — откройте [`train_bc.ipynb`](train_bc.ipynb) (Colab → GPU runtime). Ноутбук
+клонирует проект, ставит зависимости, обучает `bc_1k`/`bc_10k`, показывает TensorBoard,
+прогоняет rollout и даёт скачать чекпоинты.
+
+### Подготовка артефактов (для авторов курса)
+
+Чтобы CPU-поток мог скачивать готовые данные/модели, залейте их в облако:
+
+```bash
+python3 scripts/prepare_artifacts.py --datasets train_1k train_10k eval \
+    --checkpoints bc_1k bc_10k --gcs gs://<бакет>/artifacts
+# скрипт упакует всё в ./artifacts_upload/ и напечатает команды gsutil для заливки
+```
+
+Студенты затем задают `ARTIFACTS_URL` (или он прописан по умолчанию) — структура папок
+в облаке совпадает с тем, что ожидает `download_artifacts.py`.
+
 ## Структура проекта
 
 | Путь | Назначение |

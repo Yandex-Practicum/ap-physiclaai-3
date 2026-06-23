@@ -34,3 +34,6 @@ check_frame.png
 # OS
 .DS_Store
 Thumbs.db
+
+# Подготовленные для заливки артефакты
+artifacts_upload/
