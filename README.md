@@ -23,8 +23,7 @@ cd RoboticsCourse-Practice_3
 ./scripts/run_container.sh          # соберёт образ и откроет shell в /workspace
 ```
 
-Скрипт сам определяет железо: при наличии `nvidia-smi` собирает GPU-образ, иначе —
-CPU-образ. Флаги: `--cpu`, `--gpu`, `--rebuild`, `--restart`.
+Скрипт собирает образ и открывает shell в `/workspace`. Флаги: `--gpu`, `--rebuild`, `--restart`.
 
 Внутри контейнера доступны:
 - **noVNC** (графический рабочий стол с MuJoCo): http://localhost:6080/vnc.html
@@ -32,15 +31,14 @@ CPU-образ. Флаги: `--cpu`, `--gpu`, `--rebuild`, `--restart`.
 
 Остановить/удалить контейнер: `./scripts/kill_container.sh`.
 
-## Потоки (выберите по железу)
+## Где запускать
 
-| Поток | Симуляция (teleop, сбор, инференс) | Обучение BC |
+Практике нужна **GPU** — обучение визуомоторной модели (ResNet-энкодер) на CPU непрактично.
+
+| Вариант | Симуляция (teleop, сбор, инференс) | Обучение BC |
 |---|---|---|
-| **GPU** (NVIDIA) | в контейнере | в контейнере (`train_bc.py`) |
-| **CPU** (Intel/AMD, Apple Silicon) | в контейнере | в Google Colab (ноутбук) или готовые чекпоинты через `download_artifacts.py` |
-
-На CPU сбор больших датасетов и обучение ResNet-энкодера медленные — используйте
-готовые артефакты или Colab.
+| **Локальная NVIDIA GPU** | в контейнере | в контейнере (`train_bc.py`) |
+| **Без локальной GPU** | контейнер локально для teleop/просмотра | в Google Colab (`train_bc.ipynb`) |
 
 ## Пайплайн и команды по урокам
 
@@ -81,22 +79,22 @@ python3 inference.py --checkpoint logs/bc_1k/checkpoints/best.pt --model bc --ep
 python3 inference.py --checkpoint checkpoints/rl_expert.pt --model rl --episodes 50 --seed 999
 ```
 
-Готовые датасеты и чекпоинты (для CPU-потока):
+Опционально — готовые датасеты и чекпоинты (чтобы не тратить время на сбор/обучение):
 
 ```bash
 python3 scripts/download_artifacts.py --datasets train_1k train_10k eval --checkpoints bc_1k bc_10k
 ```
 
-### Обучение на Google Colab (CPU-поток)
+### Обучение на Google Colab (без локальной GPU)
 
-Если локальной GPU нет: соберите датасеты в Docker, а обучение BC выполните на бесплатной
+Если локальной видеокарты нет: соберите датасеты в Docker, а обучение BC выполните на бесплатной
 GPU в Colab — откройте [`train_bc.ipynb`](train_bc.ipynb) (Colab → GPU runtime). Ноутбук
 клонирует проект, ставит зависимости, обучает `bc_1k`/`bc_10k`, показывает TensorBoard,
 прогоняет rollout и даёт скачать чекпоинты.
 
 ### Подготовка артефактов (для авторов курса)
 
-Чтобы CPU-поток мог скачивать готовые данные/модели, залейте их в облако:
+Чтобы раздавать готовые данные/модели, залейте их в облако:
 
 ```bash
 python3 scripts/prepare_artifacts.py --datasets train_1k train_10k eval \
