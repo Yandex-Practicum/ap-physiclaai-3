@@ -92,13 +92,14 @@ def main():
     train_dataset = EpisodeDataset(args.train_dir)
     eval_dataset = EpisodeDataset(args.eval_dir)
 
+    pin = (device == "cuda")
     train_loader = DataLoader(
         train_dataset, batch_size=args.batch_size, shuffle=True,
-        num_workers=args.num_workers, pin_memory=True, drop_last=True,
+        num_workers=args.num_workers, pin_memory=pin, drop_last=True,
     )
     eval_loader = DataLoader(
         eval_dataset, batch_size=args.batch_size, shuffle=False,
-        num_workers=args.num_workers, pin_memory=True,
+        num_workers=args.num_workers, pin_memory=pin,
     )
 
     model = BCPolicy(action_dim=8).to(device)

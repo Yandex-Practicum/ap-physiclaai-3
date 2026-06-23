@@ -1,10 +1,18 @@
-"""Обучение RL-эксперта для сбора данных (запускается при подготовке курса, не студентами).
+"""[УСТАРЕЛО — НЕ ИСПОЛЬЗОВАТЬ] Обучение RL-эксперта простым policy gradient.
 
-Запуск:
-    python3 scripts/train_rl_expert.py --episodes 50000 --save checkpoints/rl_expert.pt
+ВНИМАНИЕ: этот скрипт не обучает рабочего эксперта. Награда строго разреженная
+(1.0 только за успех pick-and-place), а наивный REINFORCE стартует со случайной
+политики, которая практически никогда не достигает успеха → градиент почти всегда
+нулевой, обучения не происходит.
 
-Обучает MLP-политику на privileged state методом простого policy gradient.
-После обучения сохраняет чекпоинт в формате, совместимом с collect_data.py и inference.py.
+Опорная политика rl_expert.pt создаётся другим путём: scripts/distill_expert.py
+дистиллирует детерминированного скриптового эксперта (expert_scripted.py, IK по
+privileged state) в RLPolicy. Используйте его:
+
+    python3 scripts/distill_expert.py --episodes 300 --epochs 500 --save checkpoints/rl_expert.pt
+
+Файл оставлен лишь как пример того, почему разреженная награда + наивный
+policy gradient не работают на данной задаче.
 """
 
 import argparse
