@@ -52,17 +52,25 @@ def load_rl_policy(checkpoint_path: str, device: str) -> RLPolicy:
 
 
 def run_episode_bc(env, policy, device, seed):
-    obs = env.reset(seed=seed)
+    """Один эпизод closed-loop инференса BC-модели (см. Урок 6).
 
-    for step in range(env.episode_length):
-        obs_tensor = torch.from_numpy(obs).unsqueeze(0).to(device)
-        with torch.no_grad():
-            action = policy(obs_tensor).squeeze(0).cpu().numpy()
-        obs, success, done = env.step(action)
-        if done:
-            return success, step + 1
+    API среды этого проекта (не gym-стайл):
+      ``obs = env.reset(seed=seed)``           — возвращает наблюдение (кадр 84x84x3);
+      ``obs, success, done = env.step(action)`` — три значения.
 
-    return False, env.episode_length
+    TODO: реализуйте цикл управления на ``range(env.episode_length)``:
+      1) подготовьте наблюдение: ``torch.from_numpy(obs).unsqueeze(0).to(device)``
+         (добавили размерность батча и перенесли на устройство);
+      2) получите действие БЕЗ градиентов: ``with torch.no_grad(): action = policy(...)``,
+         приведите к numpy: ``.squeeze(0).cpu().numpy()``;
+      3) сделайте шаг среды: ``obs, success, done = env.step(action)``;
+      4) если ``done`` — верните ``(success, step + 1)``.
+    Если эпизод не завершился за ``env.episode_length`` шагов — верните
+    ``(False, env.episode_length)``.
+    """
+    raise NotImplementedError(
+        "Реализуйте цикл closed-loop инференса BC-модели (см. Урок 6)."
+    )
 
 
 def run_episode_rl(env, policy, device, seed):
