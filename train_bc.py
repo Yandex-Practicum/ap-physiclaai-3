@@ -19,6 +19,22 @@ from torch.utils.tensorboard import SummaryWriter
 from model import BCPolicy
 
 
+def train_step(model, optimizer, obs_batch, action_batch):
+    """Один шаг обучения BC (см. Урок 5).
+
+    TODO: реализуйте классический цикл PyTorch из 5 шагов:
+      1) обнулите градиенты (``optimizer.zero_grad``);
+      2) прямой проход: ``pred = model(obs_batch)``;
+      3) посчитайте MSE-loss между ``pred`` и ``action_batch``;
+      4) обратный проход (``loss.backward``);
+      5) шаг оптимизатора (``optimizer.step``).
+    Верните значение loss как число (``loss.item()``).
+    """
+    raise NotImplementedError(
+        "Реализуйте train_step — один шаг обучения BC (см. Урок 5)."
+    )
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Обучение BC-модели")
     parser.add_argument("--train_dir", type=str, required=True,
@@ -127,14 +143,8 @@ def main():
         n_batches = 0
         for obs, actions in train_loader:
             obs, actions = obs.to(device), actions.to(device)
-            pred = model(obs)
-            loss = criterion(pred, actions)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            train_loss_sum += loss.item()
+            loss_value = train_step(model, optimizer, obs, actions)
+            train_loss_sum += loss_value
             n_batches += 1
 
         train_loss = train_loss_sum / max(n_batches, 1)
