@@ -65,9 +65,13 @@ python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 1 \
 
 # Урок 4 — автоматический сбор датасетов
 python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 1000 \
-    --save_dir dataset/train_1k --only_success --seed 42
+    --save_dir dataset/train_1k --only_success --seed 42 --format lerobot
 python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 200 \
-    --save_dir dataset/eval --only_success --seed 100
+    --save_dir dataset/eval --only_success --seed 100 --format lerobot
+
+# train_10k — берётся готовым (см. ниже) или собирается самостоятельно (~5 ч GPU):
+# python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 10000 \
+#     --save_dir dataset/train_10k --only_success --seed 43 --format lerobot
 
 # Урок 5 — обучение BC (чекпоинты → logs/bc_1k/checkpoints/, логи → logs/bc_1k/)
 python3 train_bc.py --train_dir dataset/train_1k --eval_dir dataset/eval \
@@ -79,7 +83,22 @@ python3 inference.py --checkpoint logs/bc_1k/checkpoints/best.pt --model bc --ep
 python3 inference.py --checkpoint checkpoints/rl_expert.pt --model rl --episodes 50 --seed 999
 ```
 
-Опционально — готовые датасеты и чекпоинты (чтобы не тратить время на сбор/обучение):
+### Готовый датасет train_10k
+
+Сбор 10 000 эпизодов занимает ~5 часов GPU — вместо этого скачайте готовый датасет:
+
+```bash
+python3 scripts/download_artifacts.py --datasets train_10k
+```
+
+Если ссылка недоступна (или хотите собрать самостоятельно):
+
+```bash
+python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 10000 \
+    --save_dir dataset/train_10k --only_success --seed 43 --format lerobot
+```
+
+Опционально — скачать все готовые датасеты и чекпоинты разом:
 
 ```bash
 python3 scripts/download_artifacts.py --datasets train_1k train_10k eval --checkpoints bc_1k bc_10k
