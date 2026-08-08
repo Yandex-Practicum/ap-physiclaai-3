@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Windows Git Bash / MSYS2: prevent path conversion mangling of Unix-style paths
+export MSYS_NO_PATHCONV=1
+
 WORKDIR="/workspace"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"

@@ -130,7 +130,9 @@ def run_teleop(env, save_dir):
 
     mj_data = mujoco.MjData(env.model)
 
-    with mujoco.viewer.launch_passive(env.model, mj_data) as viewer:
+    with mujoco.viewer.launch_passive(
+        env.model, mj_data, key_callback=controller.key_callback
+    ) as viewer:
         while viewer.is_running():
             obs = env.reset()
             mj_data.qpos[:] = env.data.qpos[:]

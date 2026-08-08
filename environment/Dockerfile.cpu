@@ -46,7 +46,8 @@ RUN pip3 install --no-cache-dir \
     matplotlib \
     tensorboard \
     imageio[ffmpeg] \
-    tqdm
+    tqdm \
+    pytest
 
 ENV DISPLAY=:99
 ENV MUJOCO_GL=glx
