@@ -18,8 +18,8 @@ Apache 2.0). Задача — pick-and-place: поднять куб и дост�
 ## Быстрый старт
 
 ```bash
-git clone <URL этого репозитория>
-cd RoboticsCourse-Practice_3
+git clone https://github.com/Yandex-Practicum/ap-physiclaai-3
+cd ap-physiclaai-3
 ./scripts/run_container.sh          # соберёт образ и откроет shell в /workspace
 ```
 
