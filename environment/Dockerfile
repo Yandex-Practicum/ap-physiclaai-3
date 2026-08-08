@@ -47,7 +47,8 @@ RUN pip3 install --no-cache-dir \
     matplotlib \
     tensorboard \
     imageio[ffmpeg] \
-    tqdm
+    tqdm \
+    pytest
 
 # ── Environment variables ──────────────────────────────────────
 ENV DISPLAY=:99
