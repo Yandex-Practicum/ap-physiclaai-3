@@ -1,9 +1,9 @@
 """Ручное телеуправление Franka Panda с записью эпизодов.
 
 Запуск:
-    # По умолчанию: простой NPZ, работает до выполнения задания Урока 4
+    # Запись в NPZ
     python3 teleop.py --save_dir dataset/manual
-    # После реализации LeRobotWriter в Уроке 4
+    # Запись в LeRobotDataset
     python3 teleop.py --save_dir dataset/manual_lerobot --format lerobot
     python3 teleop.py --demo
 """
@@ -30,7 +30,7 @@ def parse_args():
     )
     parser.add_argument(
         "--format", choices=["npz", "lerobot"], default="npz",
-        help="npz работает сразу; lerobot — после задания Урока 4",
+        help="Формат сохраняемого датасета",
     )
     parser.add_argument(
         "--demo", action="store_true",
@@ -141,7 +141,7 @@ def run_teleop(env, save_dir, output_format):
     controller = TeleopController()
     writer = None
     if output_format == "lerobot":
-        # Импорт ленивый: NPZ-режим Урока 3 не зависит от LeRobotWriter.
+        # LeRobot не требуется для записи в NPZ.
         from collect_data import LeRobotWriter
         writer = LeRobotWriter(save_dir)
 

@@ -29,8 +29,7 @@ FPS = 20
 class LeRobotWriter:
     """Запись эпизодов в LeRobotDataset v3.0 (Parquet + MP4).
 
-    Инфраструктура готова. В Уроке 4 студент заполняет только два смысловых
-    участка: схему ``features`` и словарь одного кадра ``frame``.
+    В Уроке 4 заполните схему ``features`` и словарь одного кадра ``frame``.
     """
 
     def __init__(self, save_dir: str):
