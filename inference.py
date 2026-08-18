@@ -114,7 +114,8 @@ def main():
     for ep in range(args.episodes):
         ep_seed = rng.randint(0, 2**31)
         success, steps = run_fn(env, policy, device, ep_seed)
-        status = "success" if success else "fail"
+        diagnostic = env.get_rollout_diagnostic()
+        status = "success" if success else f"fail — {diagnostic}"
         successes += int(success)
         print(f"Episode {ep + 1}/{args.episodes}: {status} ({steps} steps)")
 
