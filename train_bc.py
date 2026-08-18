@@ -1,4 +1,4 @@
-"""Обучение BC-модели (CNN + MLP) на собранном датасете.
+"""Обучение BC-модели (CNN + MLP) на LeRobotDataset v3.0.
 
 Запуск:
     python3 train_bc.py --train_dir dataset/train_1k --eval_dir dataset/eval --exp_name bc_1k --epochs 100 --batch_size 64 --lr 1e-4
@@ -6,7 +6,6 @@
 """
 
 import argparse
-import glob
 import os
 import time
 
@@ -38,9 +37,9 @@ def train_step(model, optimizer, obs_batch, action_batch):
 def parse_args():
     parser = argparse.ArgumentParser(description="Обучение BC-модели")
     parser.add_argument("--train_dir", type=str, required=True,
-                        help="Папка с тренировочными эпизодами (.npz)")
+                        help="Корень тренировочного LeRobotDataset")
     parser.add_argument("--eval_dir", type=str, required=True,
-                        help="Папка с eval-эпизодами (.npz)")
+                        help="Корень eval LeRobotDataset")
     parser.add_argument("--exp_name", type=str, required=True,
                         help="Название эксперимента (bc_1k, bc_10k)")
     parser.add_argument("--epochs", type=int, default=100)
@@ -52,34 +51,28 @@ def parse_args():
 
 
 class EpisodeDataset(Dataset):
-    """Датасет из .npz файлов: каждый шаг = одна пара (obs, action)."""
+    """Ленивая обёртка над LeRobotDataset: один кадр = одна пара (obs, action)."""
 
     def __init__(self, data_dir: str):
-        self.files = sorted(glob.glob(os.path.join(data_dir, "*.npz")))
-        if not self.files:
-            raise ValueError(f"Нет .npz файлов в {data_dir}")
+        from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
-        self.observations = []
-        self.actions = []
-
-        for f in self.files:
-            ep = np.load(f)
-            obs = ep["obs"]     # (T, 84, 84, 3) uint8
-            acts = ep["actions"]  # (T, 8) float32
-            T = min(obs.shape[0], acts.shape[0])
-            self.observations.append(obs[:T])
-            self.actions.append(acts[:T])
-
-        self.observations = np.concatenate(self.observations, axis=0)
-        self.actions = np.concatenate(self.actions, axis=0)
-        print(f"Loaded {len(self.files)} episodes, {len(self)} steps from {data_dir}")
+        self.dataset = LeRobotDataset(
+            repo_id="local/practice3",
+            root=data_dir,
+            video_backend="torchcodec",
+        )
+        print(
+            f"Loaded {self.dataset.meta.total_episodes} episodes, "
+            f"{len(self)} steps from {data_dir}"
+        )
 
     def __len__(self):
-        return len(self.observations)
+        return len(self.dataset)
 
     def __getitem__(self, idx):
-        obs = torch.from_numpy(self.observations[idx].copy()).float() / 255.0
-        action = torch.from_numpy(self.actions[idx].copy())
+        sample = self.dataset[idx]
+        obs = sample["observation.images.front"].to(torch.float32)
+        action = sample["action"].to(torch.float32)
         return obs, action
 
 

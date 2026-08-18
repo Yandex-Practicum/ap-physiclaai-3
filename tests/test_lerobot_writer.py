@@ -31,6 +31,8 @@ def test_writer_produces_loadable_dataset():
     writer = LeRobotWriter(save_dir)
     obs, state, act = _fake_episode(T=6)
     writer.add_episode(obs, state, act)
+    obs2, state2, act2 = _fake_episode(T=4)
+    writer.add_episode(obs2, state2, act2)
     writer.finalize()
 
     # 1. Структура папок LeRobotDataset v3.0
@@ -43,12 +45,41 @@ def test_writer_produces_loadable_dataset():
 
     # 3. Датасет читается через API и содержит корректные данные
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
-    ds = LeRobotDataset(repo_id="local/practice3", root=save_dir)
-    assert ds.meta.total_episodes == 1
-    assert ds.meta.total_frames == 6
+    ds = LeRobotDataset(
+        repo_id="local/practice3",
+        root=save_dir,
+        video_backend="torchcodec",
+    )
+    assert ds.meta.info["codebase_version"] == "v3.0"
+    assert ds.meta.total_episodes == 2
+    assert ds.meta.total_frames == 10
 
     sample = ds[0]
     assert sample["action"].shape == (8,)
     assert sample["action"].dtype == torch.float32
+    assert sample["observation.state"].shape == (8,)
+    assert sample["observation.state"].dtype == torch.float32
     # изображение декодируется из видео как (C, H, W)
     assert tuple(sample["observation.images.front"].shape) == (3, 84, 84)
+    assert sample["observation.images.front"].dtype == torch.float32
+    assert 0.0 <= float(sample["observation.images.front"].min())
+    assert float(sample["observation.images.front"].max()) <= 1.0
+
+
+def test_training_dataset_reads_lerobot():
+    base = tempfile.mkdtemp()
+    save_dir = os.path.join(base, "ds")
+
+    writer = LeRobotWriter(save_dir)
+    obs, state, act = _fake_episode(T=4)
+    writer.add_episode(obs, state, act)
+    writer.finalize()
+
+    from train_bc import EpisodeDataset
+
+    dataset = EpisodeDataset(save_dir)
+    image, action = dataset[0]
+    assert tuple(image.shape) == (3, 84, 84)
+    assert tuple(action.shape) == (8,)
+    assert image.dtype == torch.float32
+    assert action.dtype == torch.float32

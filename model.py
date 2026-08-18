@@ -3,7 +3,6 @@
 import torch
 import torch.nn as nn
 import timm
-from einops import rearrange
 
 
 class BCPolicy(nn.Module):
@@ -28,13 +27,20 @@ class BCPolicy(nn.Module):
         )
 
     def forward(self, obs: torch.Tensor) -> torch.Tensor:
-        """obs: (B, 84, 84, 3) uint8 или float [0,1]."""
-        if obs.dtype == torch.uint8:
-            obs = obs.float() / 255.0
+        """obs: RGB-изображения (B,C,H,W), float32 в диапазоне [0,1]."""
         if obs.ndim == 3:
             obs = obs.unsqueeze(0)
-        x = rearrange(obs, "b h w c -> b c h w")
-        features = self.encoder(x)
+        if obs.ndim != 4 or obs.shape[1] != 3:
+            raise ValueError(
+                "Ожидалось RGB-изображение в формате (B,3,H,W), "
+                f"получена форма {tuple(obs.shape)}"
+            )
+        if obs.dtype != torch.float32:
+            raise TypeError(
+                "Ожидался тензор float32 в диапазоне [0,1], "
+                f"получен тип {obs.dtype}"
+            )
+        features = self.encoder(obs)
         return self.decoder(features)
 
 
