@@ -1,10 +1,12 @@
 """Ручное телеуправление Franka Panda с записью эпизодов.
 
 Запуск:
+    # По умолчанию: простой NPZ, работает до выполнения задания Урока 4
     python3 teleop.py --save_dir dataset/manual
+    # После реализации LeRobotWriter в Уроке 4
+    python3 teleop.py --save_dir dataset/manual_lerobot --format lerobot
     python3 teleop.py --demo
 """
-
 import argparse
 import os
 import signal
@@ -22,10 +24,18 @@ signal.signal(signal.SIGINT, lambda *_: sys.exit(0))
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Телеуправление PandaPickCube")
-    parser.add_argument("--save_dir", type=str, default="dataset/manual",
-                        help="Папка для сохранения эпизодов")
-    parser.add_argument("--demo", action="store_true",
-                        help="Демо-режим: случайные действия, без сохранения")
+    parser.add_argument(
+        "--save_dir", type=str, default="dataset/manual",
+        help="Папка для сохранения эпизодов",
+    )
+    parser.add_argument(
+        "--format", choices=["npz", "lerobot"], default="npz",
+        help="npz работает сразу; lerobot — после задания Урока 4",
+    )
+    parser.add_argument(
+        "--demo", action="store_true",
+        help="Демо-режим: случайные действия, без сохранения",
+    )
     return parser.parse_args()
 
 
@@ -65,19 +75,32 @@ class TeleopController:
         self.action[NUM_ARM_JOINTS] = 1.0 if self.gripper_open else -1.0
 
 
-def save_episode(save_dir, obs_list, action_list, success):
+def save_npz_episode(save_dir, obs_list, action_list, success):
+    """Сохранить ручной эпизод в исходном учебном формате NPZ."""
     os.makedirs(save_dir, exist_ok=True)
-    existing = [f for f in os.listdir(save_dir) if f.endswith(".npz")]
-    idx = len(existing)
-    filename = os.path.join(save_dir, f"episode_{idx:04d}.npz")
+    index = len([name for name in os.listdir(save_dir) if name.endswith(".npz")])
+    filename = os.path.join(save_dir, f"episode_{index:04d}.npz")
 
     obs_arr = np.stack(obs_list).astype(np.uint8)
     act_arr = np.stack(action_list).astype(np.float32)
-    dones = np.zeros(len(obs_list), dtype=np.float32)
+    dones = np.zeros(len(act_arr), dtype=np.float32)
     dones[-1] = 1.0
+    np.savez(
+        filename,
+        obs=obs_arr,
+        actions=act_arr,
+        dones=dones,
+        success=int(success),
+    )
+    print(f"Эпизод сохранён: {filename} ({len(act_arr)} шагов)")
 
-    np.savez(filename, obs=obs_arr, actions=act_arr, dones=dones, success=int(success))
-    print(f"Эпизод сохранён: {filename} ({len(obs_list)} шагов, success={success})")
+
+def save_lerobot_episode(writer, obs_list, state_list, action_list):
+    obs_arr = np.stack(obs_list).astype(np.uint8)
+    state_arr = np.stack(state_list).astype(np.float32)
+    act_arr = np.stack(action_list).astype(np.float32)
+    writer.add_episode(obs_arr, state_arr, act_arr)
+    print(f"Эпизод сохранён в LeRobotDataset ({len(action_list)} шагов)")
 
 
 def run_demo(env):
@@ -116,9 +139,14 @@ def run_demo(env):
                 step = 0
 
 
-def run_teleop(env, save_dir):
+def run_teleop(env, save_dir, output_format):
     """Интерактивный режим: управление с клавиатуры."""
     controller = TeleopController()
+    writer = None
+    if output_format == "lerobot":
+        # Импорт ленивый: NPZ-режим Урока 3 не зависит от LeRobotWriter.
+        from collect_data import LeRobotWriter
+        writer = LeRobotWriter(save_dir)
 
     print("Телеуправление Franka Panda")
     print("  Стрелки ← → ↑ ↓   — перемещение в плоскости")
@@ -126,54 +154,76 @@ def run_teleop(env, save_dir):
     print("  Пробел              — открыть/закрыть гриппер")
     print("  Enter               — сохранить эпизод как успешный")
     print("  Esc                 — отменить текущую попытку")
+    print(f"  Формат записи        — {output_format}")
     print()
 
     mj_data = mujoco.MjData(env.model)
 
-    with mujoco.viewer.launch_passive(
-        env.model, mj_data, key_callback=controller.key_callback
-    ) as viewer:
-        while viewer.is_running():
-            obs = env.reset()
-            mj_data.qpos[:] = env.data.qpos[:]
-            mj_data.qvel[:] = env.data.qvel[:]
-            mujoco.mj_forward(env.model, mj_data)
-            viewer.sync()
-
-            obs_list = [obs]
-            action_list = []
-            controller.save_requested = False
-            controller.cancel_requested = False
-
-            print("Новый эпизод. Управляйте роботом...")
-
+    try:
+        viewer_context = mujoco.viewer.launch_passive(
+            env.model, mj_data, key_callback=controller.key_callback
+        )
+        with viewer_context as viewer:
             while viewer.is_running():
-                action = controller.action.copy()
-                action_list.append(action)
-
-                obs, success, done = env.step(action)
-                obs_list.append(obs)
-
+                obs = env.reset()
                 mj_data.qpos[:] = env.data.qpos[:]
                 mj_data.qvel[:] = env.data.qvel[:]
                 mujoco.mj_forward(env.model, mj_data)
                 viewer.sync()
-                time.sleep(0.05)
 
-                if controller.save_requested:
-                    save_episode(save_dir, obs_list[:-1], action_list, success=True)
-                    break
+                obs_list = [obs]
+                state_list = [env.get_privileged_state()[:8].copy()]
+                action_list = []
+                controller.save_requested = False
+                controller.cancel_requested = False
 
-                if controller.cancel_requested:
-                    print("Попытка отменена.")
-                    break
+                print("Новый эпизод. Управляйте роботом...")
 
-                if done:
-                    if success:
-                        save_episode(save_dir, obs_list[:-1], action_list, success=True)
-                    else:
-                        print("Таймаут. Попробуйте снова.")
-                    break
+                while viewer.is_running():
+                    action = controller.action.copy()
+                    action_list.append(action)
+
+                    obs, success, done = env.step(action)
+                    obs_list.append(obs)
+                    state_list.append(env.get_privileged_state()[:8].copy())
+
+                    mj_data.qpos[:] = env.data.qpos[:]
+                    mj_data.qvel[:] = env.data.qvel[:]
+                    mujoco.mj_forward(env.model, mj_data)
+                    viewer.sync()
+                    time.sleep(0.05)
+
+                    if controller.save_requested:
+                        if writer is None:
+                            save_npz_episode(
+                                save_dir, obs_list[:-1], action_list, success=True
+                            )
+                        else:
+                            save_lerobot_episode(
+                                writer, obs_list[:-1], state_list[:-1], action_list
+                            )
+                        break
+
+                    if controller.cancel_requested:
+                        print("Попытка отменена.")
+                        break
+
+                    if done:
+                        if success:
+                            if writer is None:
+                                save_npz_episode(
+                                    save_dir, obs_list[:-1], action_list, success=True
+                                )
+                            else:
+                                save_lerobot_episode(
+                                    writer, obs_list[:-1], state_list[:-1], action_list
+                                )
+                        else:
+                            print("Таймаут. Попробуйте снова.")
+                        break
+    finally:
+        if writer is not None:
+            writer.finalize()
 
 
 def main():
@@ -185,7 +235,7 @@ def main():
         if args.demo:
             run_demo(env)
         else:
-            run_teleop(env, args.save_dir)
+            run_teleop(env, args.save_dir, args.format)
     finally:
         env.close()
 
