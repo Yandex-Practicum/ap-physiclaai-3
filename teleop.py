@@ -118,12 +118,11 @@ def run_demo(env):
         mj_data.qpos[:] = env.data.qpos[:]
         mj_data.qvel[:] = env.data.qvel[:]
 
-        step = 0
         while viewer.is_running():
             action = np.random.uniform(-0.3, 0.3, size=8).astype(np.float32)
             action[7] = 1.0
 
-            obs, success, done = env.step(action)
+            _, _, done = env.step(action)
 
             mj_data.qpos[:] = env.data.qpos[:]
             mj_data.qvel[:] = env.data.qvel[:]
@@ -131,12 +130,10 @@ def run_demo(env):
             viewer.sync()
             time.sleep(0.05)
 
-            step += 1
             if done:
                 env.reset()
                 mj_data.qpos[:] = env.data.qpos[:]
                 mj_data.qvel[:] = env.data.qvel[:]
-                step = 0
 
 
 def run_teleop(env, save_dir, output_format):
