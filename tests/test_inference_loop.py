@@ -22,12 +22,12 @@ class DummyEnv:
 
     def reset(self, seed=None):
         self.t = 0
-        return np.zeros((84, 84, 3), dtype=np.uint8)
+        return np.full((84, 84, 3), 255, dtype=np.uint8)
 
     def step(self, action):
         assert np.asarray(action).shape == (8,), "action должен быть вектором из 8 чисел"
         self.t += 1
-        obs = np.zeros((84, 84, 3), dtype=np.uint8)
+        obs = np.full((84, 84, 3), 255, dtype=np.uint8)
         success = self.t >= self.succeed_at
         done = success or self.t >= self.episode_length
         return obs, success, done
@@ -39,9 +39,15 @@ class GradCheckPolicy(nn.Module):
         super().__init__()
         self.lin = nn.Linear(84 * 84 * 3, 8)
         self.grad_was_enabled = None
+        self.last_shape = None
+        self.last_min = None
+        self.last_max = None
 
     def forward(self, obs):
         self.grad_was_enabled = torch.is_grad_enabled()
+        self.last_shape = tuple(obs.shape)
+        self.last_min = float(obs.min())
+        self.last_max = float(obs.max())
         b = obs.shape[0]
         return self.lin(obs.reshape(b, -1).float())
 
@@ -52,6 +58,9 @@ def test_returns_success_and_steps():
     success, steps = run_episode_bc(env, policy, device="cpu", seed=0)
     assert bool(success) is True
     assert steps == 5
+    assert policy.last_shape == (1, 3, 84, 84)
+    assert policy.last_min == 1.0
+    assert policy.last_max == 1.0
 
 
 def test_timeout_returns_false():

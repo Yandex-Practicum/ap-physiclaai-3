@@ -31,24 +31,26 @@ RUN apt-get update && apt-get install -y \
 
 # ── PyTorch (CUDA 12) ────────────────────────────────────────
 RUN pip3 install --no-cache-dir \
-    torch --index-url https://download.pytorch.org/whl/cu124
+    torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cu128
 
-# ── MuJoCo + JAX ─────────────────────────────────────────────
+# ── MuJoCo ───────────────────────────────────────────────────
 RUN pip3 install --no-cache-dir \
-    mujoco \
-    numpy \
-    "jax[cuda12]"
+    mujoco==3.11.0 \
+    numpy==2.2.6
 
 # ── BC-специфичные зависимости ────────────────────────────────
 RUN pip3 install --no-cache-dir \
-    lerobot \
-    einops \
-    timm \
-    matplotlib \
-    tensorboard \
-    imageio[ffmpeg] \
-    tqdm \
-    pytest
+    lerobot==0.4.4 torchcodec==0.5.0 \
+    timm==1.0.28 \
+    matplotlib==3.10.9 \
+    tensorboard==2.21.0 \
+    imageio[ffmpeg]==2.37.4 \
+    tqdm==4.70.0 \
+    pytest==9.1.1
+
+# TorchCodec loads FFmpeg shared libraries (libavcodec/libavutil) at runtime.
+RUN apt-get update && apt-get install -y ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 # ── Environment variables ──────────────────────────────────────
 ENV DISPLAY=:99

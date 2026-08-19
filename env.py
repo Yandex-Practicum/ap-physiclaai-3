@@ -7,6 +7,8 @@ import mujoco
 import mujoco.renderer
 import numpy as np
 
+from rollout_diagnostics import classify_rollout_failure
+
 SCENE_XML = os.path.join(os.path.dirname(__file__), "assets", "scene.xml")
 
 NUM_ARM_JOINTS = 7
@@ -67,6 +69,7 @@ class PandaPickCubeEnv:
 
         mujoco.mj_forward(self.model, self.data)
         self._step_count = 0
+        self._max_cube_z = float(self.data.xpos[self._cube_body_id][2])
         return self._get_obs()
 
     def step(self, action: np.ndarray):
@@ -91,6 +94,10 @@ class PandaPickCubeEnv:
             mujoco.mj_step(self.model, self.data)
 
         self._step_count += 1
+        self._max_cube_z = max(
+            self._max_cube_z,
+            float(self.data.xpos[self._cube_body_id][2]),
+        )
         obs = self._get_obs()
         success = self._check_success()
         done = success or self._step_count >= self.episode_length
@@ -123,6 +130,13 @@ class PandaPickCubeEnv:
         target_pos = self.model.body_pos[self._target_body_id]
         dist = np.linalg.norm(cube_pos - target_pos)
         return bool(dist < SUCCESS_DIST and cube_pos[2] > 0.45)
+
+    def get_rollout_diagnostic(self) -> str:
+        """Вернуть наблюдаемый результат последнего rollout."""
+        if self._check_success():
+            return "success"
+        final_cube_z = float(self.data.xpos[self._cube_body_id][2])
+        return classify_rollout_failure(self._max_cube_z, final_cube_z)
 
     @property
     def privileged_state_dim(self) -> int:

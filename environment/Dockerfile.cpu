@@ -29,25 +29,26 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip3 install --no-cache-dir \
-    torch --index-url https://download.pytorch.org/whl/cpu
+    torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cpu
 
 RUN pip3 install --no-cache-dir \
-    mujoco \
-    numpy \
-    jax \
-    jaxlib
+    mujoco==3.11.0 \
+    numpy==2.2.6
 
 RUN pip3 install --upgrade pip
 
 RUN pip3 install --no-cache-dir \
-    lerobot \
-    einops \
-    timm \
-    matplotlib \
-    tensorboard \
-    imageio[ffmpeg] \
-    tqdm \
-    pytest
+    lerobot==0.4.4 torchcodec==0.5.0 \
+    timm==1.0.28 \
+    matplotlib==3.10.9 \
+    tensorboard==2.21.0 \
+    imageio[ffmpeg]==2.37.4 \
+    tqdm==4.70.0 \
+    pytest==9.1.1
+
+# TorchCodec loads FFmpeg shared libraries (libavcodec/libavutil) at runtime.
+RUN apt-get update && apt-get install -y ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV DISPLAY=:99
 ENV MUJOCO_GL=glx

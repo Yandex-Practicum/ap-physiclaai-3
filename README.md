@@ -13,7 +13,7 @@ Apache 2.0). Задача — pick-and-place: поднять куб и дост�
 
 - Docker (Desktop на macOS/Windows или Engine на Linux).
 - Для обучения BC желательна NVIDIA GPU; без неё — Google Colab (см. ниже).
-- ~3 ГБ под Docker-образ, плюс место под датасеты (`dataset/`) и логи (`logs/`).
+- Место под Docker-образ, датасеты (`dataset/`) и логи (`logs/`).
 
 ## Быстрый старт
 
@@ -33,7 +33,7 @@ cd ap-physiclaai-3
 
 ## Где запускать
 
-Практике нужна **GPU** — обучение визуомоторной модели (ResNet-энкодер) на CPU непрактично.
+Для обучения BC нужна **GPU** — обучение визуомоторной модели (ResNet-энкодер) на CPU непрактично.
 
 | Вариант | Симуляция (teleop, сбор, инференс) | Обучение BC |
 |---|---|---|
@@ -46,10 +46,10 @@ cd ap-physiclaai-3
 checkpoints/rl_expert.pt                  # опорная политика (privileged state)
         │
         ▼
-teleop.py / collect_data.py               # Уроки 3–4: сбор демонстраций
+collect_data.py                            # Урок 4: автоматический сбор демонстраций
         │
         ▼
-dataset/{train_1k, train_10k, eval}/      # .npz: obs (T,84,84,3), actions (T,8), dones, success
+dataset/{train_1k, train_10k, eval}/      # LeRobot v3: Parquet + MP4 + meta
         │
         ▼
 train_bc.py  ──►  logs/<exp>/             # Урок 5: обучение BC, TensorBoard + checkpoints/{best,last}.pt
@@ -59,9 +59,8 @@ inference.py  ──►  Success Rate           # Урок 6: rollout-оценк
 ```
 
 ```bash
-# Урок 3 — демонстрационный эпизод от опорной политики
-python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 1 \
-    --save_dir dataset/demo --only_success --seed 7
+# Урок 3 — ручной эпизод в формате NPZ
+python3 teleop.py --save_dir dataset/manual
 
 # Урок 4 — автоматический сбор датасетов
 python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 1000 \
@@ -69,7 +68,7 @@ python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 100
 python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 200 \
     --save_dir dataset/eval --only_success --seed 100 --format lerobot
 
-# train_10k — берётся готовым (см. ниже) или собирается самостоятельно (~5 ч GPU):
+# train_10k — берётся готовым (см. ниже) или собирается самостоятельно:
 # python3 collect_data.py --checkpoint checkpoints/rl_expert.pt --num_episodes 10000 \
 #     --save_dir dataset/train_10k --only_success --seed 43 --format lerobot
 
@@ -85,9 +84,10 @@ python3 inference.py --checkpoint checkpoints/rl_expert.pt --model rl --episodes
 
 ### Готовый датасет train_10k
 
-Сбор 10 000 эпизодов занимает ~5 часов GPU — вместо этого скачайте готовый датасет:
+Если преподаватель предоставил готовый датасет, задайте выданный URL и скачайте его:
 
 ```bash
+export ARTIFACTS_URL=https://storage.googleapis.com/BUCKET/artifacts
 python3 scripts/download_artifacts.py --datasets train_10k
 ```
 
@@ -106,7 +106,7 @@ python3 scripts/download_artifacts.py --datasets train_1k train_10k eval --check
 
 ### Обучение на Google Colab (без локальной GPU)
 
-Если локальной видеокарты нет: соберите датасеты в Docker, а обучение BC выполните на бесплатной
+Если локальной видеокарты нет: соберите датасеты в Docker, а обучение BC выполните на
 GPU в Colab — откройте [`train_bc.ipynb`](train_bc.ipynb) (Colab → GPU runtime). Ноутбук
 клонирует проект, ставит зависимости, обучает `bc_1k`/`bc_10k`, показывает TensorBoard,
 прогоняет rollout и даёт скачать чекпоинты.
@@ -121,7 +121,7 @@ python3 scripts/prepare_artifacts.py --datasets train_1k train_10k eval \
 # скрипт упакует всё в ./artifacts_upload/ и напечатает команды gsutil для заливки
 ```
 
-Студенты затем задают `ARTIFACTS_URL` (или он прописан по умолчанию) — структура папок
+Студенты затем задают `ARTIFACTS_URL` — структура папок
 в облаке совпадает с тем, что ожидает `download_artifacts.py`.
 
 ## Структура проекта

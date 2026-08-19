@@ -55,12 +55,13 @@ def run_episode_bc(env, policy, device, seed):
     """Один эпизод closed-loop инференса BC-модели (см. Урок 6).
 
     API среды этого проекта (не gym-стайл):
-      ``obs = env.reset(seed=seed)``           — возвращает наблюдение (кадр 84x84x3);
+      ``obs = env.reset(seed=seed)``            — кадр HWC uint8 [0,255];
       ``obs, success, done = env.step(action)`` — три значения.
 
     TODO: реализуйте цикл управления на ``range(env.episode_length)``:
-      1) подготовьте наблюдение: ``torch.from_numpy(obs).unsqueeze(0).to(device)``
-         (добавили размерность батча и перенесли на устройство);
+      1) преобразуйте наблюдение HWC uint8 [0,255] в BCHW float32 [0,1]:
+         переставьте оси, добавьте размерность батча, разделите на 255 и
+         перенесите тензор на ``device``;
       2) получите действие БЕЗ градиентов: ``with torch.no_grad(): action = policy(...)``,
          приведите к numpy: ``.squeeze(0).cpu().numpy()``;
       3) сделайте шаг среды: ``obs, success, done = env.step(action)``;
@@ -113,7 +114,8 @@ def main():
     for ep in range(args.episodes):
         ep_seed = rng.randint(0, 2**31)
         success, steps = run_fn(env, policy, device, ep_seed)
-        status = "success" if success else "fail"
+        diagnostic = env.get_rollout_diagnostic()
+        status = "success" if success else f"fail — {diagnostic}"
         successes += int(success)
         print(f"Episode {ep + 1}/{args.episodes}: {status} ({steps} steps)")
 
