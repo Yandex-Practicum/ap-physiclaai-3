@@ -84,12 +84,7 @@ python3 inference.py --checkpoint checkpoints/rl_expert.pt --model rl --episodes
 
 ### Готовый датасет train_10k
 
-Если преподаватель предоставил готовый датасет, задайте выданный URL и скачайте его:
-
-```bash
-export ARTIFACTS_URL=https://storage.googleapis.com/BUCKET/artifacts
-python3 scripts/download_artifacts.py --datasets train_10k
-```
+Готовый датасет train_10k можно скачать по этой ссылке: https://disk.yandex.ru/d/0mJcJ3Gsg9hiwQ
 
 Если ссылка недоступна (или хотите собрать самостоятельно):
 
